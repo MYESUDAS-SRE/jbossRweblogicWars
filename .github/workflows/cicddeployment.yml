@@ -22,25 +22,22 @@ jobs:
           cd SampleWebApp
           mvn clean package
 
+      - name: Verify WAR built
+        run: ls SampleWebApp/target
+
       - name: Upload WAR artifact
         uses: actions/upload-artifact@v4
         with:
           name: SampleWebApp
           path: SampleWebApp/target/*.war
 
-
-      # 4. Verify WAR exists
-      - name: Verify WAR built
-        run: ls target
-
-      # 5. Upload WAR to JBoss1
       - name: Upload WAR to JBoss1
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.JBOSS1 }}
           username: ec2-user
           key: ${{ secrets.EC2_KEY }}
-          source: target/SampleWebApp.war
+          source: SampleWebApp/target/SampleWebApp.war
           target: /tmp
 
       - name: Deploy WAR on JBoss1
@@ -62,14 +59,13 @@ jobs:
             sudo -u wildfly touch /opt/wildfly/standalone/deployments/SampleWebApp.war.dodeploy
             tail -n 20 /opt/wildfly/wildfly.log
 
-      # 6. Upload WAR to JBoss2
       - name: Upload WAR to JBoss2
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.JBOSS2 }}
           username: ec2-user
           key: ${{ secrets.EC2_KEY }}
-          source: target/SampleWebApp.war
+          source: SampleWebApp/target/SampleWebApp.war
           target: /tmp
 
       - name: Deploy WAR on JBoss2
@@ -77,16 +73,4 @@ jobs:
         with:
           host: ${{ secrets.JBOSS2 }}
           username: ec2-user
-          key: ${{ secrets.EC2_KEY }}
-          script: |
-            echo "===== JBoss2 Deployment ====="
-            if ! pgrep -u wildfly -f "wildfly" > /dev/null; then
-              sudo -u wildfly nohup /opt/wildfly/bin/standalone.sh -b 0.0.0.0 \
-                > /opt/wildfly/wildfly.log 2>&1 &
-              sleep 20
-            fi
-            sudo rm -rf /opt/wildfly/standalone/deployments/SampleWebApp.war*
-            sudo cp /tmp/SampleWebApp.war /opt/wildfly/standalone/deployments/
-            sudo chown wildfly:wildfly /opt/wildfly/standalone/deployments/SampleWebApp.war
-            sudo -u wildfly touch /opt/wildfly/standalone/deployments/SampleWebApp.war.dodeploy
-            tail -n 20 /opt/wildfly/wildfly.log
+          key: ${{ secrets.EC2_K_
